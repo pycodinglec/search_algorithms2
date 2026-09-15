@@ -8,6 +8,34 @@ const settings = {
 };
 let algorithm = 'astar', trace = null, index = 0, timer = null, loadVersion = 0, selected = [0,0];
 const cache = new Map();
+let sourceSha256 = null;
+const SNAPSHOT_JSON_MAX_BYTES = 16000;
+function snapshotJson(value) {
+  const json = JSON.stringify(value);
+  if (typeof json !== 'string' || new TextEncoder().encode(json).length > SNAPSHOT_JSON_MAX_BYTES) throw new Error('Snapshot too large');
+  return json;
+}
+function tutorSnapshot() {
+  if (!trace || !sourceSha256) return null;
+  try {
+    const event = trace.events[index];
+    return {
+      version: 1, algorithm, example: $('example').value, noCost: trace.noCost,
+      eventIndex: index, line: event.line || 0, functionName: event.fn,
+      sourceSha256, variablesJson: snapshotJson(event.vars),
+      stateJson: snapshotJson(trace.states[event.state])
+    };
+  } catch { return null; }
+}
+window.addEventListener('message', event => {
+  if (window.parent === window || event.source !== window.parent) return;
+  if (event.origin !== 'https://duri.sehwa.hs.kr' && !/^http:\/\/(?:localhost|127\.0\.0\.1):[0-9]{1,5}$/.test(event.origin)) return;
+  const data = event.data;
+  if (!data || data.type !== 'sehwa-search:request' || data.version !== 1 ||
+      typeof data.requestId !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(data.requestId)) return;
+  event.source.postMessage({type: 'sehwa-search:snapshot', version: 1,
+    requestId: data.requestId, snapshot: tutorSnapshot()}, event.origin);
+});
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = value => typeof value === 'number' ? Number(value.toFixed(3)).toString() : String(value ?? '—');
 const position = p => p ? `(${p[0]}, ${p[1]})` : '—';
@@ -44,6 +72,7 @@ async function load() {
   pause();
   const version = ++loadVersion;
   trace = null;
+  sourceSha256 = null;
   $('status').className = '';
   $('status').textContent = '실행 기록을 불러오는 중입니다.';
   document.querySelectorAll('.transport button, .transport input, .transport select').forEach(el => el.disabled = true);
@@ -56,7 +85,15 @@ async function load() {
       cache.set(key, await response.json());
     }
     if (version !== loadVersion) return;
-    trace = cache.get(key);
+    const loadedTrace = cache.get(key);
+    let digest = null;
+    try {
+      const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(loadedTrace.source));
+      digest = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+    } catch { /* The simulator remains usable if secure-context hashing is unavailable. */ }
+    if (version !== loadVersion) return;
+    trace = loadedTrace;
+    sourceSha256 = digest;
     index = trace.searchStart;
     selected = startAndGoal()[0];
     $('code').innerHTML = trace.source.trimEnd().split('\n').map((line, i) => `<div class="code-line" id="line-${i+1}"><span class="line-number">${i+1}</span><span>${highlight(line) || ' '}</span></div>`).join('');
@@ -81,6 +118,8 @@ async function load() {
     }
   } catch (error) {
     if (version !== loadVersion) return;
+    trace = null;
+    sourceSha256 = null;
     $('status').className = 'error';
     $('status').textContent = `실행 기록을 읽지 못했습니다. 다른 알고리즘을 선택하거나 새로고침해 주세요. (${error.message})`;
   }
