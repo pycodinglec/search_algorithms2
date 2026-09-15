@@ -7,9 +7,9 @@ async(page)=>{
   const map=page.locator('.visual-column'),code=page.locator('.code-panel'),separator=page.locator('#pane-divider');
   const before=(await map.boundingBox()).width,codeBefore=(await code.boundingBox()).width;
   const box=await separator.boundingBox();const y=Math.max(200,box.y+20);
-  await page.mouse.move(box.x+box.width/2,y);await page.mouse.down();await page.mouse.move(box.x+box.width/2+300,y,{steps:10});await page.mouse.up();
+  await page.mouse.move(box.x+box.width/2,y);await page.mouse.down();await page.mouse.move(box.x+box.width/2+400,y,{steps:10});await page.mouse.up();
   const after=(await map.boundingBox()).width;
-  if(after<before+280||(await code.boundingBox()).width>codeBefore-280)throw Error('Drag did not resize both panes');
+  if(after<before+380||(await code.boundingBox()).width>codeBefore-380)throw Error('Drag did not resize both panes');
   if(!await page.locator('.grid-scroll').evaluate(el=>el.scrollWidth<=el.clientWidth+1))throw Error('Map should fit when expanded');
   const step=await page.locator('#seek').inputValue();await separator.focus();await page.keyboard.press('ArrowLeft');
   if((await map.boundingBox()).width>after-19)throw Error('Keyboard resize');

@@ -141,12 +141,13 @@ function render() {
   $('next').disabled = $('last').disabled = done;
   $('phase').textContent = done ? '실행 완료' : `${event.fn} · ${event.line}행`;
   $('explanation').textContent = explain(event);
+  $('metric-guide').textContent = (algorithm==='astar'?'큰 값 f = g + h: 기록된 누적 비용과 도착점까지의 직선거리를 더합니다. g가 아직 ∞인 칸은 f도 ∞입니다.':algorithm==='greedy'?'큰 값 h: 도착점까지의 직선거리입니다. 지도 입력으로 계산하므로 발견 전 칸에도 표시됩니다.':'깊이·너비우선은 후보를 넣은 순서로 선택하므로 큰 우선순위 숫자를 표시하지 않습니다.');
   $('map-size').textContent = `${trace.example.map.length}행 × ${trace.example.map[0].length}열`;
   const grid = $('grid');
   const columns = trace.example.map[0].length;
-  grid.classList.toggle('wide-grid', columns > 5);
-  grid.style.minWidth = columns > 5 ? `${18 + columns * 63}px` : '';
-  $('wide-map-hint').hidden = columns <= 5;
+  grid.classList.toggle('wide-grid', columns > 3);
+  grid.style.minWidth = columns > 3 ? `${18 + columns * 76}px` : '';
+  $('wide-map-hint').hidden = columns <= 3;
   grid.style.gridTemplateColumns = `18px repeat(${trace.example.map[0].length}, minmax(0,1fr))`;
   let cells = '<span></span>' + [...trace.example.map[0]].map((_,x) => `<span class="axis">${x}</span>`).join('');
   trace.example.map.forEach((row,y) => {
@@ -155,8 +156,11 @@ function render() {
       const p=[y,x], cell=state.board[y]?.[x], g=cell?.[0] ?? '∞', prev=cell?.[1] ?? '';
       const wall=kind==='1';
       const flags=[state.order.some(q=>same(q,p))?'seen':'',queue.some(q=>same(q.p,p))?'queued':'',same(state.current,p)&&!done?'current':'',state.path.some(q=>same(q,p))?'path':'',wall?'wall':'',same(selected,p)?'selected':''].join(' ');
-      const label=kind==='s'?'s · 출발':kind==='d'?'d · 도착':wall?'벽':`비용 ${costs[y][x]}`;
-      cells += `<button class="cell ${flags}" data-y="${y}" data-x="${x}" aria-label="${y}행 ${x}열, ${label}, g ${fmt(g)}" aria-pressed="${same(selected,p)}"><strong>${wall?'▨':kind==='s'?'s':kind==='d'?'d':costs[y][x]}</strong>${wall?'<small>벽</small>':`<span class="cell-g">g ${fmt(g)}</span><small>진입 ${costs[y][x]}</small>`}<span class="arrow">${esc(prev==='0'?'':prev)}</span></button>`;
+      const h=Math.hypot(y-goal[0],x-goal[1]);
+      const metric=algorithm==='astar'?`f ${typeof g==='number'?fmt(g+h):'∞'}`:algorithm==='greedy'?`h ${fmt(h)}`:'';
+      const marker=kind==='s'?'s':kind==='d'?'d':'';
+      const label=wall?'벽':`${marker==='s'?'출발, ':marker==='d'?'도착, ':''}진입 비용 ${costs[y][x]}, g ${fmt(g)}${metric?`, ${metric}`:''}`;
+      cells += `<button class="cell ${flags}" data-y="${y}" data-x="${x}" aria-label="${y}행 ${x}열, ${label}" aria-pressed="${same(selected,p)}">${marker?`<span class="cell-marker" aria-hidden="true">${marker}</span>`:''}<strong class="cell-priority${metric.length>7?' long-priority':''}" aria-hidden="true">${wall?'▨':metric}</strong>${wall?'<small>벽</small>':`<span class="cell-g">g ${fmt(g)}</span><small>진입 ${costs[y][x]}</small>`}<span class="arrow" aria-hidden="true">${esc(prev==='0'?'':prev)}</span></button>`;
     });
   });
   const focusedCell = document.activeElement?.closest('#grid button');
@@ -165,7 +169,7 @@ function render() {
   if (restorePosition) grid.querySelector(`[data-y="${restorePosition[0]}"][data-x="${restorePosition[1]}"]`)?.focus({preventScroll:true});
   const [sy,sx]=selected, selectedCell=state.board[sy]?.[sx];
   const h=Math.hypot(sy-goal[0],sx-goal[1]), sg=selectedCell?.[0]??'∞';
-  $('cell-detail').textContent = trace.example.map[sy][sx]==='1' ? `${position(selected)} · 벽입니다. 탐색 후보에 넣지 않습니다.` : `${position(selected)} · 진입 비용 ${costs[sy][sx]} · g ${fmt(sg)} · h ${fmt(h)} · g+h ${typeof sg==='number'?fmt(sg+h):'∞'} · 직전 ${selectedCell?.[1] || '없음'}`;
+  $('cell-detail').textContent = trace.example.map[sy][sx]==='1' ? `${position(selected)} · 벽입니다. 탐색 후보에 넣지 않습니다.` : `${position(selected)} · 진입 비용 ${costs[sy][sx]} · g ${fmt(sg)}${algorithm==='astar'?` · h ${fmt(h)} · f = g + h ${typeof sg==='number'?fmt(sg+h):'∞'}`:algorithm==='greedy'?` · h ${fmt(h)} (거리 우선순위)`:' · 우선순위 숫자 없음 (후보 순서로 선택)'} · 직전 ${selectedCell?.[1] || '없음'}`;
   $('queue-count').textContent = `${queue.length}개`;
   $('queue').innerHTML = queue.length ? queue.map((q,i)=>`<span class="queue-node ${i===(algorithm==='dfs'?queue.length-1:0)?'next':''}"><b>${position(q.p)}</b>${q.priority!==undefined?`<small>${algorithm==='greedy'?'h':'f'} ${fmt(q.priority)}</small>`:''}${i===(algorithm==='dfs'?queue.length-1:0)?'<small>꺼낼 자리</small>':''}</span>`).join('') : '<span class="queue-empty">후보 목록이 비어 있습니다.</span>';
   $('visits').textContent = state.order.length;
