@@ -1,6 +1,6 @@
 async (page) => {
   const check=(ok,msg)=>{if(!ok)throw new Error(msg);};
-  const round=n=>Number(n.toFixed(3)).toString();
+  const round=n=>Number(n.toFixed(2)).toString();
   const results=[];
   for(const algo of ['dfs','bfs','greedy','astar']) {
     await page.locator(`[data-algo="${algo}"]`).click();

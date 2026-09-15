@@ -25,3 +25,5 @@ identity, browser storage, or full source are sent. The host matches the digest
 to its separately pinned source before teaching line-specific content.
 
 Run `node tests/tutor_bridge.test.cjs` for protocol and load-race regression tests.
+
+Numeric UI values round to at most two decimal places; trailing zeros are omitted. Trace values and Python calculations retain their original precision.

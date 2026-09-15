@@ -37,7 +37,7 @@ window.addEventListener('message', event => {
     requestId: data.requestId, snapshot: tutorSnapshot()}, event.origin);
 });
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = value => typeof value === 'number' ? Number(value.toFixed(3)).toString() : String(value ?? '—');
+const fmt = value => typeof value === 'number' ? Number(value.toFixed(2)).toString() : String(value ?? '—');
 const position = p => p ? `(${p[0]}, ${p[1]})` : '—';
 const same = (a,b) => !!a && !!b && a[0] === b[0] && a[1] === b[1];
 const valueText = v => Array.isArray(v) ? `(${v.map(valueText).join(', ')})` : v && typeof v === 'object' ? `{${Object.entries(v).map(([k,x]) => `${k}: ${valueText(x)}`).join(', ')}}` : fmt(v);
