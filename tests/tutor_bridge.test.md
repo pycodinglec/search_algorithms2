@@ -7,3 +7,5 @@ It checks source digest, complete variable/state JSON, forward/rewind state,
 completion, UTF-8 size bounds, request IDs, origin/source rejection, unavailable
 loading state, and stale load protection. Browser integration separately checks
 the real iframe and controls; this test does not claim to validate layout.
+
+Theme messages accept only light/dark from the allowed parent origin and version; invalid sender, origin, theme or version leaves the current palette unchanged.

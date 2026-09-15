@@ -12,6 +12,7 @@ const context = vm.createContext({
   TextEncoder, crypto: webcrypto, clearInterval, setInterval,
   window: {parent, addEventListener: (type, handler) => listeners[type] = handler},
   document: {
+    documentElement: {dataset: {}},
     getElementById(id) { if (!elements.has(id)) elements.set(id, {value: 'blocked', checked: true, setAttribute(){}}); return elements.get(id); },
     querySelectorAll: () => [], querySelector: () => ({scrollLeft: 0})
   },
@@ -26,6 +27,14 @@ function request(overrides = {}) {
   return responses.at(-1)?.message.snapshot;
 }
 (async () => {
+  const themeData = theme => ({type:'sehwa-search:theme',version:1,theme});
+  assert.equal(context.document.documentElement.dataset.hostTheme, undefined);
+  request({data:themeData('dark')});
+  assert.equal(context.document.documentElement.dataset.hostTheme,'dark');
+  for (const overrides of [{origin:'https://evil.example'}, {source:{}}, {data:themeData('unknown')}, {data:{...themeData('light'),version:2}}]) request({data:themeData('light'),...overrides});
+  assert.equal(context.document.documentElement.dataset.hostTheme,'dark');
+  request({data:themeData('light')});
+  assert.equal(context.document.documentElement.dataset.hostTheme,'light');
   request(); assert.equal(responses.at(-1).message.snapshot, null);
   await run('load()');
   const first = request();

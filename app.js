@@ -31,6 +31,10 @@ window.addEventListener('message', event => {
   if (window.parent === window || event.source !== window.parent) return;
   if (event.origin !== 'https://duri.sehwa.hs.kr' && !/^http:\/\/(?:localhost|127\.0\.0\.1):[0-9]{1,5}$/.test(event.origin)) return;
   const data = event.data;
+  if (data?.type === 'sehwa-search:theme' && data.version === 1) {
+    if (data.theme === 'light' || data.theme === 'dark') document.documentElement.dataset.hostTheme = data.theme;
+    return;
+  }
   if (!data || data.type !== 'sehwa-search:request' || data.version !== 1 ||
       typeof data.requestId !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(data.requestId)) return;
   event.source.postMessage({type: 'sehwa-search:snapshot', version: 1,

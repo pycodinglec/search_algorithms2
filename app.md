@@ -27,3 +27,5 @@ to its separately pinned source before teaching line-specific content.
 Run `node tests/tutor_bridge.test.cjs` for protocol and load-race regression tests.
 
 Numeric UI values round to at most two decimal places; trailing zeros are omitted. Trace values and Python calculations retain their original precision.
+
+Trusted parent theme messages (`sehwa-search:theme`, version 1, light/dark only) set `data-host-theme` without resetting playback. The same origin and parent-window checks protect snapshots and themes. Standalone pages keep their own palette.

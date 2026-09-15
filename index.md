@@ -10,3 +10,5 @@ request the tutor snapshot bridge instead of reusing an older cached script.
 The version query does not change the simulator source, routing, or execution.
 
 The precision2-20260915 script version refreshes cached clients for two-decimal display.
+
+Host-theme asset versions refresh both CSS and JS together for embedded palette synchronization.
