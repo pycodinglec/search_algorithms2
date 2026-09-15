@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>탐색 실험실 · 한 줄씩 따라가는 Python</title>
+<meta name="description" content="깊이우선탐색, 너비우선탐색, 최상우선탐색, A*의 실제 Python 실행 기록을 코드·지도·후보 목록으로 함께 살펴보세요.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%2327544a'/%3E%3Ctext x='20' y='28' text-anchor='middle' font-size='27' fill='white'%3E↗%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=20260914-wide"><script src="app.js?v=20260914-wide" defer></script>
+</head>
+<body>
+<header class="masthead"><a href="./" class="brand"><span class="brand-icon">↗</span> 탐색 실험실</a><span class="edition">PYTHON · SEARCH ALGORITHMS</span><a class="repo-link" href="https://github.com/pycodinglec/search_algorithms2" target="_blank" rel="noreferrer">GitHub ↗</a></header>
+<main>
+<section class="intro"><p class="eyebrow">코드를 읽는 것에서, 실행을 이해하는 것으로</p><h1>다음에는 어느 칸을 탐색할까?</h1><p>같은 지도, 네 가지 선택. 코드를 한 줄씩 실행하며 후보와 비용이 바뀌는 순간을 살펴보세요.</p></section>
+<nav class="algorithms" aria-label="탐색 알고리즘 선택">
+<button data-algo="dfs" aria-pressed="false"><span class="algo-number">01</span><strong>깊이우선탐색</strong><small>스택 · 마지막 후보부터</small></button>
+<button data-algo="bfs" aria-pressed="false"><span class="algo-number">02</span><strong>너비우선탐색</strong><small>큐 · 처음 후보부터</small></button>
+<button data-algo="greedy" aria-pressed="false"><span class="algo-number">03</span><strong>최상우선탐색</strong><small>목적지까지의 거리 h</small></button>
+<button data-algo="astar" aria-pressed="true"><span class="algo-number">04</span><strong>A*</strong><small>누적 비용 g + 거리 h</small></button>
+</nav>
+<div class="setup"><label>예제 지도 <select id="example"><option value="basic">비용이 다른 3 × 3</option><option value="maze">벽을 돌아가는 4 × 5</option><option value="uploaded">복잡한 지도 8 × 12</option><option value="blocked">도착할 수 없는 지도</option></select></label><label class="check"><input id="no-cost" type="checkbox"> 모든 칸의 비용을 1로</label><button id="input-toggle" aria-expanded="false" aria-controls="inputs">입력 파일 보기</button></div>
+<div id="inputs" hidden><div><strong>지도 입력 · s 출발 / d 도착 / 1 벽</strong><pre id="map-input"></pre></div><div><strong>비용 입력 · 각 글자가 한 칸의 비용</strong><pre id="cost-input"></pre></div><p id="input-note"></p></div>
+<div class="principle"><span class="pill" id="rule-tag">f = g + h</span><p id="rule"></p></div>
+<div id="status" role="status">실행 기록을 불러오는 중입니다.</div>
+<section class="transport" aria-label="실행 제어">
+<div class="buttons"><button id="first" title="파일 읽기부터 다시 보기">처음</button><button id="previous" aria-label="이전 단계">← 이전</button><button id="play" class="primary">▶ 자동 재생</button><button id="next">다음 →</button><button id="last">결과</button><span class="divider"></span><label>진행 단위 <select id="step-mode"><option value="line">코드 한 줄</option><option value="node">후보 꺼내기</option></select></label><label>속도 <select id="speed"><option value="1200">느리게</option><option value="500" selected>보통</option><option value="120">빠르게</option></select></label></div>
+<div class="timeline"><span id="step-count">—</span><input id="seek" type="range" min="0" max="1" value="0" aria-label="실행 단계 이동"><button id="search-start">탐색 시작으로</button></div>
+</section>
+<div class="workspace">
+<div class="visual-column">
+<section class="panel map-panel"><div class="panel-heading"><h2>탐색 지도</h2><span class="resize-hint">가운데 경계선을 드래그해 너비 조절 ↔</span><span id="map-size"></span></div><div class="legend"><span><i class="current-key"></i>현재</span><span><i class="queue-key"></i>후보</span><span><i class="seen-key"></i>꺼낸 적 있음</span><span><i class="path-key"></i>복원 경로</span></div><div class="grid-scroll" tabindex="0" aria-label="지도 가로 스크롤"><div id="grid" aria-label="탐색 지도"></div></div><p id="wide-map-hint" class="muted" hidden>넓은 지도입니다. 지도 영역을 좌우로 스크롤해 나머지 열을 확인하세요.</p><p class="map-hint">좌표는 (행, 열), 0부터 시작합니다. 칸을 누르면 자세히 볼 수 있어요.<br>칸 안의 화살표는 <b>직전 칸으로 돌아가는 방향</b>입니다.</p><div id="cell-detail" class="cell-detail"></div></section>
+<section class="panel"><div class="panel-heading"><h2>후보 목록</h2><span id="queue-count">0개</span></div><p id="queue-rule" class="muted"></p><div id="queue" class="queue"></div><div class="metrics"><div><small>후보를 꺼낸 횟수</small><strong id="visits">0</strong></div><div><small>도착 칸의 현재 g</small><strong id="goal-cost">∞</strong></div></div><details><summary>지금까지 꺼낸 순서</summary><p id="order" class="mono wrap"></p></details></section>
+<section class="panel result-panel"><div class="panel-heading"><h2>실행 결과</h2><span id="result-state">진행 전</span></div><p id="result-summary">도착 칸의 비용도 탐색 중에 더 작아질 수 있습니다.</p><details id="console-details"><summary>Python 출력 보기</summary><pre id="console">아직 출력이 없습니다.</pre></details></section>
+</div>
+<div id="pane-divider" class="pane-divider" role="separator" aria-label="지도와 코드 영역 너비 조절" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" tabindex="0" title="좌우로 드래그하거나 방향키로 너비 조절"><span aria-hidden="true">⋮</span></div>
+<section class="panel code-panel"><div class="panel-heading"><h2 id="filename">a_star.py</h2><a id="download" href="a_star.py" download>파일 받기 ↓</a></div><div class="execution-note"><span id="phase" class="pill">실행 준비</span><p id="explanation"></p><small>강조한 줄은 <b>다음에 실행할 줄</b>입니다. 아래 값은 그 줄을 실행하기 전 상태입니다.</small></div><div id="code" class="code" tabindex="0" aria-label="Python 소스 코드"></div><div class="variables"><div class="panel-heading"><h3>현재 함수의 변수</h3><span id="function-name"></span></div><div id="variables"></div><p class="call-stack">호출 순서 <span id="stack"></span></p></div></section>
+</div>
+<section class="reading-guide"><div><p class="eyebrow">이렇게 살펴보세요</p><h2>선택 → 비교 → 갱신</h2></div><ol><li><b>무엇을 꺼낼까?</b><span>‘후보 꺼내기’로 탐색 순서를 먼저 보고, ‘코드 한 줄’로 세부 동작을 따라가세요.</span></li><li><b>더 싼 길일까?</b><span>새비용과 이웃칸의 g를 비교하세요. 작을 때만 비용과 직전 화살표가 바뀝니다.</span></li><li><b>언제 끝날까?</b><span>깊이·너비우선은 후보가 빌 때까지, 최상우선·A*는 도착 칸을 꺼내면 끝납니다.</span></li></ol></section>
+<details class="method"><summary>이 실험실의 실행 방식과 학습 범위</summary><p>네 Python 파일을 CPython에서 실제 실행하며 기록한 줄 번호와 변수 상태를 재생합니다. 별도의 JavaScript 탐색 알고리즘으로 흉내 내지 않습니다. 입력 4개와 비용 모드 2개의 기록을 제공합니다. 코드를 자유롭게 편집·실행하는 Python 환경은 아닙니다.</p><p>첫 화면은 입력 읽기와 지도 구성이 끝난 ‘탐색’ 함수부터 보여줍니다. ‘처음’을 누르면 파일 읽기부터 결과 출력까지 살펴볼 수 있습니다. 코드의 기본 입력 설정은 그대로 표시되며, 예제와 비용 모드는 기록 생성 시 main 호출 전에 적용됩니다.</p><p>깊이·너비우선은 원본의 비용 반복 갱신 방식을 유지했습니다. 일반적인 방문 1회 방식과 다릅니다. h는 유클리드 거리이고, 위 → 오른쪽 → 아래 → 왼쪽 순으로 이웃을 확인합니다. 같은 우선순위에서는 기존 후보 순서를 유지합니다. 비용은 출발 칸을 포함합니다.</p><p>숫자는 화면에서 소수 셋째 자리까지 표시하며 실제 계산값은 반올림하지 않습니다. 줄 단위 재생에서는 함수 호출과 반환을 따라 같은 줄이 다시 보일 수 있습니다. 이전 반복에서 만든 지역 변수는 재할당될 때까지 남습니다.</p></details>
+</main><footer><span>탐색 실험실 · Python으로 배우는 경로 탐색</span><span>← → 단계 이동 · Space 재생 / 정지</span></footer>
+</body></html>
