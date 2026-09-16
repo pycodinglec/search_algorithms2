@@ -12,3 +12,5 @@ The version query does not change the simulator source, routing, or execution.
 The precision2-20260915 script version refreshes cached clients for two-decimal display.
 
 Host-theme asset versions refresh both CSS and JS together for embedded palette synchronization.
+
+The fluid-20260916 CSS version refreshes embedded full-width layout; JavaScript is unchanged.

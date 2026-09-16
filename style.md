@@ -27,3 +27,21 @@ Check light/dark host switching while stepping and resizing, plus standalone
 rendering without the attribute. Inspect current/queued/visited/path/wall states,
 active code syntax, native controls, and keyboard focus in desktop and mobile
 browser E2E. Integration tests and screenshots are owned by the release task.
+
+## Fluid embedded layout
+
+Embedded main, footer and masthead use the host viewport width with fixed small
+gutters instead of the standalone 1450px maximum. Mobile retains its stacked
+layout. Wide maps default to 56% of the workspace, capped at 1000px, enough for
+12 readable columns when the iframe is roughly 2k pixels wide. Remaining space
+goes to code. Existing explicit user splitter width always takes precedence;
+algorithm/example changes do not reset it. Narrow panes retain their accessible
+local horizontal scroll instead of shrinking node text. Standalone layout is
+unchanged. No JavaScript, Python, source numbering or trace state changes.
+
+Validate embedded 390, 1440, 2560, 3440 and 5120px viewports, including 8x12 maps,
+code coexistence, splitter keyboard control, no document-level horizontal scroll,
+and standalone maximum width preservation.
+
+An embedded map-pane container hides the horizontal-scroll hint when its content
+width reaches 940px, enough for even the largest supported 12-column map.

@@ -122,3 +122,21 @@
 [data-host-theme] .pane-divider:focus-visible,
 [data-host-theme] .pane-divider.dragging { background: var(--line); }
 [data-host-theme] .pane-divider span { color: var(--muted); }
+
+/* Use the host's available width, including ultrawide displays. */
+[data-host-theme] main,
+[data-host-theme] footer { max-width: none; }
+[data-host-theme] .masthead { padding-inline: 24px; }
+@media (max-width: 600px) {
+  [data-host-theme] .masthead { padding-inline: 18px; }
+}
+@media (min-width: 901px) {
+  [data-host-theme] .workspace:has(#grid.wide-grid) {
+    grid-template-columns: minmax(0,var(--map-width,min(56%,1000px))) 12px minmax(0,1fr);
+  }
+}
+
+[data-host-theme] .map-panel { container-type: inline-size; }
+@container (min-width: 940px) {
+  #wide-map-hint { display: none; }
+}
